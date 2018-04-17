@@ -1,4 +1,6 @@
 import './style.css';
+const ace = require('ace-builds');
+require("../node_modules/ace-builds/src-min-noconflict/mode-javascript")
 
 interface IGame {
   resources: IResources,
@@ -37,6 +39,7 @@ setTimeout(tick, 100);
 
 let num = 0;
 let lastTime = 0;
+
 function tick() {
   const t = performance.now();
   const dt = (t - lastTime) / 1000;
@@ -47,20 +50,28 @@ function tick() {
     try {
       safeEval(game.code, null, (err: any, result: any) => {
         if (err) {
-          console.warn(err);
+          throw err;
         } else {
-          console.log(result.answer);
+          log(result.answer);
         }
         setTimeout(tick, 100);
       }, game);
     } catch (e) {
-      console.error (e);
+      log(e);
     }
   } else {
     setTimeout(tick, 100);
   }
 
   lastTime = t;
+}
+
+function log (msg: string) {
+  const div = document.createElement ("div");
+  div.innerHTML = `${new Date().toString()}: ${msg}`;
+  const log = document.getElementById("log");
+  log.appendChild(div);
+  log.scrollTo(100000, 100000);
 }
 
 function updateResources(dt: number) {
@@ -112,6 +123,10 @@ function initializeDOM() {
   document.getElementById("build-b").onclick = () => build("b");
   document.getElementById("build-c").onclick = () => build("c");
   document.getElementById("run").onclick = runCode;
+
+  const editor = ace.edit("editor");
+  //editor.setTheme("ace/theme/twilight");
+  editor.session.setMode("ace/mode/javascript");
 }
 
 function updateDOM() {
@@ -121,7 +136,7 @@ function updateDOM() {
 }
 
 function runCode() {
-  game.code = (<HTMLTextAreaElement>document.getElementById("code")).value;
+  game.code = ace.edit("editor").getValue();
 }
 
 const safeEval = (function () {
@@ -158,6 +173,9 @@ const safeEval = (function () {
       finish(error.message, undefined);
     };
 
+    if (code.match(/return/)) {
+      code = `(function(){${code}})()`
+    }
     code = `state = ${JSON.stringify(state)};\n` + code;
     worker.postMessage({
       code: code,

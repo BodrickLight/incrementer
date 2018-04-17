@@ -1,3 +1,38 @@
-.hello {
-  color: red;
+html, body {
+  height: 100%;
+}
+#container {
+  display:flex;
+  flex-direction: row;
+  height: 40%;
+}
+
+#resources {
+  display:flex;
+  flex-direction: row;
+}
+
+#code-container {
+  flex: 1;
+  height: 70%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+#editor {
+  /*position: absolute;
+  margin: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  */
+  display:flex;
+  height: 100%;
+}
+
+#log {
+  height: 30%;
+  overflow-y: scroll;
 }
