@@ -6,7 +6,7 @@ var blob = new Blob([code.toString()
   }),
   codeUrl = URL.createObjectURL(blob);
 
-export default function (code: string, cb: Function, state: any) {
+export default function (code: string, state: object, functions: object, cb: Function) {
   var worker = new Worker(codeUrl);
   var timeout: number;
 
@@ -26,13 +26,12 @@ export default function (code: string, cb: Function, state: any) {
     finish(error.message, undefined);
   };
 
-  if (code.match(/return/)) {
-    code = `(function(){${code}})()`
-  }
-  code = `state = ${JSON.stringify(state)};\n` + code;
+  code = `(function() {\n${code}\n })();`
+
   worker.postMessage({
     code: code,
-    arg: null,
+    variables: state,
+    functions: functions,
   });
 
   function start() {
@@ -42,7 +41,7 @@ export default function (code: string, cb: Function, state: any) {
 
     timeout = setTimeout(function () {
       finish('Maximum execution time exceeded', undefined);
-    }, 500);
+    }, 500);//500);
   }
 
   function finish(err: any, result: any) {

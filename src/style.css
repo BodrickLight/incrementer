@@ -7,7 +7,7 @@ html, body {
   height: 40%;
 }
 
-#resources {
+#registers {
   display:flex;
   flex-direction: row;
 }

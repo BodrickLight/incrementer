@@ -2,14 +2,19 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <title><%= htmlWebpackPlugin.options.title %></title>
+    <title>incrementer</title>
   </head>
 
   <body>
     <h1>incrementer</h1>
     <div id="container">
-      <div id="resources">
-        <div><h3>a:</h3><div id="a"></div><button id="build-a"></button><button id="speed-a"></button></div>
+      <div id="registers">
+        <div><h3>ax:</h3><div id="ax"></div><button id="build-a"></button><button id="speed-a"></button></div>
+        <div><h3>bx:</h3><div id="bx"></div><button id="build-b"></button><button id="speed-b"></button></div>
+        <div><h3>cx:</h3><div id="cx"></div><button id="build-c"></button><button id="speed-c"></button></div>
+      </div>
+      <div id="upgrades">
+        <button id="buy-computer"></button>
       </div>
 
       <div id="code-container">
@@ -18,6 +23,13 @@
       </div>
     </div>
 
-    <div id="log"></div>
+    <div id="bottom" style="display:flex;flex-direction:row;height:100%;">
+      <div id="log"></div>
+      <div>
+        <h3>state</h3>
+        <pre id="state"></pre>
+        <pre id="functions"></pre>
+      </div>
+    </div>
   </body>
 </html>

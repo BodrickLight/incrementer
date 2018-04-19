@@ -136,7 +136,7 @@ module.exports = function () {
   console.error = console.info = console.debug = console.log;
 
   (function () {
-    'use strict';
+    //'use strict';
 
     global.onmessage = function (event) {
       global.postMessage({
@@ -155,9 +155,11 @@ module.exports = function () {
           log: jsonStringify(console._items, reviver).slice(1, -1)
         });
       };
+
+      const _hidden_return_value = [];
       var done = function (result) {
         if (timeoutCounter < 1) {
-          sendResult(result);
+          sendResult(_hidden_return_value);
         }
       };
 
@@ -211,9 +213,21 @@ module.exports = function () {
       };
 
       try {
+        for (const variable in event.data.variables) {
+          this[variable] = event.data.variables[variable];
+        }
+
+        eval(`var functions = ${event.data.functions};`);
+        for (const fnName in functions) {
+          this[fnName] = functions[fnName];
+        }
+
+        delete functions;
+
         result = exec(event.data.code, event.data.arg);
       }
       catch (e) {
+        console.log(e);
         result = e.toString();
       }
 
