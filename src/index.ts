@@ -3,6 +3,7 @@ import './style.css';
 import safeEval from './eval';
 const pretty = require('js-object-pretty-print').pretty;
 import { Decimal } from 'decimal.js-light';
+import './decimalEx';
 
 const ace = require('ace-builds');
 require("ace-builds/src-min-noconflict/mode-javascript")
@@ -29,7 +30,7 @@ let game = {
   },
   registerWidthUpgrades: {
     ax: new Decimal(2),
-    bx: new Decimal(0),
+    bx: new Decimal(2),
   },
   code: <string> "",
   computerPurchased: false,
@@ -53,8 +54,8 @@ function tick() {
 
   const variables = getCodeVariables();
   const functions = getCodeFunctions();
-  document.getElementById("state").innerHTML = pretty(variables);
-  document.getElementById("functions").innerHTML = pretty(functions);
+  document.getElementById("state").textContent = pretty(variables);
+  document.getElementById("functions").textContent = pretty(functions);
   if (game.code) {
     try {
       const start = performance.now();
@@ -96,10 +97,10 @@ function tick() {
 
 function getCodeVariables() {
   const obj = <any>{};
-  obj.ax = game.registers.ax.toDecimalPlaces(0, Decimal.ROUND_DOWN).toNumber();
-  obj.axMax = getAXMaxValue().toDecimalPlaces(0, Decimal.ROUND_DOWN).toNumber();
-  obj.nextAXWidthCost = getNextAXRegisterWidthCost().toDecimalPlaces(0, Decimal.ROUND_DOWN).toNumber();
-  obj.nextAXIncrementerCost = game.incrementers.ax.nextCost.ax.toDecimalPlaces(0, Decimal.ROUND_DOWN).toNumber();
+  obj.ax = game.registers.ax.render();
+  obj.axMax = getAXMaxValue().render();
+  obj.nextAXWidthCost = getNextAXRegisterWidthCost().render();
+  obj.nextAXIncrementerCost = game.incrementers.ax.nextCost.ax.render();
   return obj;
 }
 
@@ -127,7 +128,7 @@ function log (msg: string) {
     return;
   }
   const div = document.createElement("div");
-  div.innerHTML = `${new Date().toString()}: ${msg}`;
+  div.textContent = `${new Date().toString()}: ${msg}`;
   const log = document.getElementById("log");
   log.appendChild(div);
   log.scrollTo(100000, 100000);
@@ -138,7 +139,6 @@ function incrementAX(cycles: number) {
   const delta = axRate.times(cycles);
   game.registers.ax = game.registers.ax.add(delta);
 }
-
 
 function increaseAXWidth() {
   const cost = getNextAXRegisterWidthCost();
@@ -177,15 +177,15 @@ function initializeDOM() {
 }
 
 function updateAXIncrementers () {
-  document.getElementById("speed-a").innerHTML = `Purchase incrementer (${game.incrementers.ax.nextCost.ax})`;
+  document.getElementById("speed-a").textContent = `Purchase incrementer (${game.incrementers.ax.nextCost.ax})`;
 }
 
 function updateAXWidth () {
-  document.getElementById("build-a").innerHTML = `Increase register width (${getNextAXRegisterWidthCost()})`;
+  document.getElementById("build-a").textContent = `Increase register width (${getNextAXRegisterWidthCost()})`;
 }
 
 function updateAXRegister() {
-  document.getElementById("ax").innerHTML = `${game.registers.ax.toDecimalPlaces(0, Decimal.ROUND_DOWN)} / ${getAXMaxValue()}`;
+  document.getElementById("ax").textContent = `${game.registers.ax.render()} / ${getAXMaxValue()}`;
 }
 
 function runCode() {
