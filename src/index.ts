@@ -2,35 +2,67 @@ import './style.css';
 
 import safeEval from './eval';
 const pretty = require('js-object-pretty-print').pretty;
-import { Decimal } from 'decimal.js-light';
-import './decimalEx';
 
 const ace = require('ace-builds');
 require("ace-builds/src-min-noconflict/mode-javascript")
 
 let game = {
-  registers: {
-    ax: new Decimal(0),
-    bx: new Decimal(0),
+  saveVersion: 1,
+  resources: <any>{
+    ax: {
+      value: 0,
+      max: 4,
+    },
+    bx: {
+      value: 0,
+      max: 4,
+    }
   },
   incrementers: {
     ax: {
-      quantity: new Decimal(0),
+      quantity: 0,
       nextCost: {
-        ax: new Decimal(0),
+        ax: 0,
       }
     },
     bx: {
-      quantity: new Decimal(0),
+      quantity: 0,
       nextCost: {
-        ax: new Decimal(0),
-        bx: new Decimal(0),
+        ax: 0,
+        bx: 0,
       }
     },
   },
-  registerWidthUpgrades: {
-    ax: new Decimal(2),
-    bx: new Decimal(2),
+  upgrades: {
+    axWidth: {
+      name: "AX Register Width",
+      cost: <any>{
+        ax: 3,
+      },
+      apply: () => {
+        game.resources.ax.max *= 2;
+      },
+      increaseCost: () => {
+        for (const resource in game.upgrades.axWidth.cost) {
+          game.upgrades.axWidth.cost[resource] *= 2;
+        }
+      }
+    },
+    bxWidth: {
+      name: "BX Register Width",
+      cost: <any>{
+        ax: 6,
+        bx: 3,
+      },
+      apply: () => {
+        game.resources.bx.max *= 2;
+      },
+      increaseCost: () => {
+        for (const resource in game.upgrades.bxWidth.cost) {
+          game.upgrades.bxWidth.cost[resource] *= 2;
+        }
+      }
+    }
   },
   code: <string> "",
   computerPurchased: false,
@@ -61,7 +93,6 @@ function tick() {
           game.code = null;
         } else {
           const actions = JSON.parse(result.answer);
-          console.log(actions);
           for(const a of actions) {
             if (a === "buyAXWidthUpgrade") {
               increaseAXWidth();
@@ -91,12 +122,12 @@ function tick() {
 
 function getCodeVariables() {
   const obj = <any>{};
-  obj.ax = game.registers.ax.render();
-  obj.axMax = getAXMaxValue().render();
-  obj.bx = game.registers.bx.render();
-  obj.bxMax = getBXMaxValue().render();
-  obj.nextAXWidthCost = getNextAXRegisterWidthCost().render();
-  obj.nextAXIncrementerCost = game.incrementers.ax.nextCost.ax.render();
+  obj.ax = game.resources.ax.value;
+  obj.axMax = game.resources.ax.max;
+  obj.bx = game.resources.bx.value;
+  obj.bxMax = game.resources.bx.max;
+  obj.nextAXWidthCost = game.upgrades.axWidth.cost;
+  obj.nextAXIncrementerCost = game.incrementers.ax.nextCost.ax;
   return obj;
 }
 
@@ -133,40 +164,44 @@ function log (msg: string) {
 function incrementRegisters() {
   const axRate = game.incrementers.ax.quantity;
 
-  const axCapacity = getAXMaxValue();
-  const bxCapacity = getBXMaxValue();
+  const axCapacity = game.resources.ax.max;
+  const bxCapacity = game.resources.bx.max;
 
-  game.registers.ax = game.registers.ax.add(axRate);
-  if (game.registers.ax.greaterThanOrEqualTo(axCapacity.add(1))) {
-    game.registers.bx = game.registers.bx.add(axCapacity.dividedToIntegerBy(axCapacity));
-    game.registers.ax = game.registers.ax.modulo(axCapacity.add(1));
+  game.resources.ax.value += axRate;
+  if (game.resources.ax.value >= axCapacity + 1) {
+    game.resources.bx.value = game.resources.bx.value + Math.floor(game.resources.ax.value / axCapacity);
+    game.resources.ax.value = game.resources.ax.value % (axCapacity + 1);
   }
 
-  if (game.registers.bx.greaterThanOrEqualTo(bxCapacity.add(1))) {
-    game.registers.bx = game.registers.bx.modulo(bxCapacity.add(1));
+  if (game.resources.bx.value >= bxCapacity + 1) {
+    game.resources.bx.value = game.resources.bx.value % (bxCapacity + 1);
   }
 }
 
 function increaseAXWidth() {
-  const cost = getNextAXRegisterWidthCost();
-  if (game.registers.ax.lessThan(cost)) {
-    return;
+  for (const resource in game.upgrades.axWidth.cost) {
+    if ((<any>game.resources)[resource].value < game.upgrades.axWidth.cost[resource]) {
+      return;
+    }
   }
 
-  game.registerWidthUpgrades.ax = game.registerWidthUpgrades.ax.add(1);
-  game.registers.ax = game.registers.ax.minus(cost);
+  for (const resource in game.upgrades.axWidth.cost) {
+    (<any>game.resources)[resource].value -= game.upgrades.axWidth.cost[resource];
+  }
 
+  game.upgrades.axWidth.apply();
+  game.upgrades.axWidth.increaseCost();
   updateAXWidth();
 }
 
 function buyAXIncrementer() {
-  if (game.registers.ax.lessThan(game.incrementers.ax.nextCost.ax)) {
+  if (game.resources.ax.value < game.incrementers.ax.nextCost.ax) {
     return;
   }
 
-  game.registers.ax = game.registers.ax.minus(game.incrementers.ax.nextCost.ax);
-  game.incrementers.ax.quantity = game.incrementers.ax.quantity.add(1);
-  game.incrementers.ax.nextCost.ax = game.incrementers.ax.quantity.equals(1) ? new Decimal (4) : game.incrementers.ax.nextCost.ax.times(1.01 + Math.random() * 0.2).toDecimalPlaces(0, Decimal.ROUND_UP);
+  game.resources.ax.value -= game.incrementers.ax.nextCost.ax;
+  game.incrementers.ax.quantity += 1;
+  game.incrementers.ax.nextCost.ax = game.incrementers.ax.quantity === 1 ? 4 : game.incrementers.ax.nextCost.ax * Math.ceil(1.01 + Math.random() * 0.2);
   updateAXIncrementers();
 }
 
@@ -184,32 +219,24 @@ function initializeDOM() {
 }
 
 function updateAXIncrementers () {
-  document.getElementById("speed-a").textContent = `Purchase incrementer (${game.incrementers.ax.nextCost.ax})`;
+  document.getElementById("speed-a").textContent = `Purchase incrementer (${renderCost(game.incrementers.ax.nextCost)})`;
 }
 
 function updateAXWidth () {
-  document.getElementById("build-a").textContent = `Increase register width (${getNextAXRegisterWidthCost()})`;
+  document.getElementById("build-a").textContent = `Increase register width (${renderCost(game.upgrades.axWidth.cost)})`;
 }
 
 function updateRegisters() {
-  document.getElementById("ax").textContent = `${game.registers.ax.render()} / ${getAXMaxValue()}`;
-  document.getElementById("bx").textContent = `${game.registers.bx.render()} / ${getBXMaxValue()}`;
+  document.getElementById("ax").textContent = `${game.resources.ax.value} / ${game.resources.ax.max}`;
+  document.getElementById("bx").textContent = `${game.resources.bx.value} / ${game.resources.bx.max}`;
 }
 
 function runCode() {
   game.code = ace.edit("editor").getValue();
 }
 
-function getAXMaxValue() {
-  return new Decimal(2).toPower(game.registerWidthUpgrades.ax);
-}
-
-function getBXMaxValue() {
-  return new Decimal(2).toPower(game.registerWidthUpgrades.bx);
-}
-
-function getNextAXRegisterWidthCost() {
-  return new Decimal(2).toPower(game.registerWidthUpgrades.ax).times(0.75);
+function renderCost(cost: any) {
+  return Object.keys(cost).map(x => `${x}:${cost[x]}`).join(", ");
 }
 
 initializeDOM();
