@@ -43,14 +43,8 @@ let lastTime = 0;
 
 function tick() {
   const t = performance.now();
-  const cycles = (t - lastTime) / 200;
 
-  incrementAX(cycles);
-
-  const axCapacity = getAXMaxValue();
-  if (game.registers.ax.greaterThanOrEqualTo(axCapacity.add(1))) {
-    game.registers.ax = game.registers.ax.modulo(axCapacity.add(1));
-  }
+  incrementRegisters();
 
   const variables = getCodeVariables();
   const functions = getCodeFunctions();
@@ -91,7 +85,7 @@ function tick() {
 
   lastTime = t;
 
-  updateAXRegister();
+  updateRegisters();
 }
 
 
@@ -99,6 +93,8 @@ function getCodeVariables() {
   const obj = <any>{};
   obj.ax = game.registers.ax.render();
   obj.axMax = getAXMaxValue().render();
+  obj.bx = game.registers.bx.render();
+  obj.bxMax = getBXMaxValue().render();
   obj.nextAXWidthCost = getNextAXRegisterWidthCost().render();
   obj.nextAXIncrementerCost = game.incrementers.ax.nextCost.ax.render();
   return obj;
@@ -134,10 +130,21 @@ function log (msg: string) {
   log.scrollTo(100000, 100000);
 }
 
-function incrementAX(cycles: number) {
+function incrementRegisters() {
   const axRate = game.incrementers.ax.quantity;
-  const delta = axRate.times(cycles);
-  game.registers.ax = game.registers.ax.add(delta);
+
+  const axCapacity = getAXMaxValue();
+  const bxCapacity = getBXMaxValue();
+
+  game.registers.ax = game.registers.ax.add(axRate);
+  if (game.registers.ax.greaterThanOrEqualTo(axCapacity.add(1))) {
+    game.registers.bx = game.registers.bx.add(axCapacity.dividedToIntegerBy(axCapacity));
+    game.registers.ax = game.registers.ax.modulo(axCapacity.add(1));
+  }
+
+  if (game.registers.bx.greaterThanOrEqualTo(bxCapacity.add(1))) {
+    game.registers.bx = game.registers.bx.modulo(bxCapacity.add(1));
+  }
 }
 
 function increaseAXWidth() {
@@ -159,7 +166,7 @@ function buyAXIncrementer() {
 
   game.registers.ax = game.registers.ax.minus(game.incrementers.ax.nextCost.ax);
   game.incrementers.ax.quantity = game.incrementers.ax.quantity.add(1);
-  game.incrementers.ax.nextCost.ax = game.incrementers.ax.quantity.equals(1) ? new Decimal (1) : game.incrementers.ax.nextCost.ax.times(1.01 + Math.random() * 0.2).toDecimalPlaces(0, Decimal.ROUND_UP);
+  game.incrementers.ax.nextCost.ax = game.incrementers.ax.quantity.equals(1) ? new Decimal (4) : game.incrementers.ax.nextCost.ax.times(1.01 + Math.random() * 0.2).toDecimalPlaces(0, Decimal.ROUND_UP);
   updateAXIncrementers();
 }
 
@@ -169,7 +176,7 @@ function initializeDOM() {
   document.getElementById("run").onclick = runCode;
   updateAXWidth();
   updateAXIncrementers();
-  updateAXRegister();
+  updateRegisters();
 
   const editor = ace.edit("editor");
   //editor.setTheme("ace/theme/twilight");
@@ -184,8 +191,9 @@ function updateAXWidth () {
   document.getElementById("build-a").textContent = `Increase register width (${getNextAXRegisterWidthCost()})`;
 }
 
-function updateAXRegister() {
+function updateRegisters() {
   document.getElementById("ax").textContent = `${game.registers.ax.render()} / ${getAXMaxValue()}`;
+  document.getElementById("bx").textContent = `${game.registers.bx.render()} / ${getBXMaxValue()}`;
 }
 
 function runCode() {
@@ -194,6 +202,10 @@ function runCode() {
 
 function getAXMaxValue() {
   return new Decimal(2).toPower(game.registerWidthUpgrades.ax);
+}
+
+function getBXMaxValue() {
+  return new Decimal(2).toPower(game.registerWidthUpgrades.bx);
 }
 
 function getNextAXRegisterWidthCost() {
