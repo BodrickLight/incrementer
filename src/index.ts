@@ -1,73 +1,56 @@
 import './style.css';
 
 import safeEval from './eval';
+import * as Save from './save';
+
 const pretty = require('js-object-pretty-print').pretty;
 
 const ace = require('ace-builds');
 require("ace-builds/src-min-noconflict/mode-javascript")
 
 let game = {
-  saveVersion: 1,
-  resources: <any>{
-    ax: {
-      value: 0,
-      max: 4,
-    },
-    bx: {
-      value: 0,
-      max: 4,
-    }
-  },
-  incrementers: {
-    ax: {
-      quantity: 0,
-      nextCost: {
-        ax: 0,
-      }
-    },
-    bx: {
-      quantity: 0,
-      nextCost: {
-        ax: 0,
-        bx: 0,
-      }
-    },
-  },
-  upgrades: {
-    axWidth: {
-      name: "AX Register Width",
-      cost: <any>{
-        ax: 3,
+  state: <any>null,
+  logic: {
+    upgrades: {
+      axWidth: {
+        name: "AX Register Width",
+        cost: <any>{
+          ax: 3,
+        },
+        apply: () => {
+          game.state.resources.ax.max *= 2;
+        },
+        increaseCost: () => {
+          for (const resource in game.state.upgrades.axWidth.cost) {
+            game.state.upgrades.axWidth.cost[resource] *= 2;
+          }
+        }
       },
-      apply: () => {
-        game.resources.ax.max *= 2;
-      },
-      increaseCost: () => {
-        for (const resource in game.upgrades.axWidth.cost) {
-          game.upgrades.axWidth.cost[resource] *= 2;
+      bxWidth: {
+        name: "BX Register Width",
+        cost: <any>{
+          ax: 6,
+          bx: 3,
+        },
+        apply: () => {
+          game.state.resources.bx.max *= 2;
+        },
+        increaseCost: () => {
+          for (const resource in game.state.upgrades.bxWidth.cost) {
+            game.state.upgrades.bxWidth.cost[resource] *= 2;
+          }
         }
       }
     },
-    bxWidth: {
-      name: "BX Register Width",
-      cost: <any>{
-        ax: 6,
-        bx: 3,
-      },
-      apply: () => {
-        game.resources.bx.max *= 2;
-      },
-      increaseCost: () => {
-        for (const resource in game.upgrades.bxWidth.cost) {
-          game.upgrades.bxWidth.cost[resource] *= 2;
-        }
-      }
-    }
-  },
-  code: <string> "",
-  computerPurchased: false,
+  }
 };
 
+game.state = <any>Save.load();
+if (!game.state) {
+  doHardReset();
+}
+
+initializeDOM();
 const tickSpeed = 200;
 setTimeout(tick, tickSpeed);
 
@@ -82,15 +65,15 @@ function tick() {
   const functions = getCodeFunctions();
   document.getElementById("state").textContent = pretty(variables);
   document.getElementById("functions").textContent = pretty(functions);
-  if (game.code) {
+  if (game.state.code) {
     try {
       const start = performance.now();
-      safeEval(game.code, variables, pretty(functions, 2, null, true), (err: any, result: any) => {
+      safeEval(game.state.code, variables, pretty(functions, 2, null, true), (err: any, result: any) => {
         const end = performance.now();
         console.log(`Execution time: ${end-start}`);
         if (err) {
           log(err);
-          game.code = null;
+          game.state.code = null;
         } else {
           const actions = JSON.parse(result.answer);
           for(const a of actions) {
@@ -107,7 +90,7 @@ function tick() {
       });
     } catch (e) {
       log(e);
-      game.code = null;
+      game.state.code = null;
       setTimeout(tick, tickSpeed);
     }
   } else {
@@ -122,12 +105,12 @@ function tick() {
 
 function getCodeVariables() {
   const obj = <any>{};
-  obj.ax = game.resources.ax.value;
-  obj.axMax = game.resources.ax.max;
-  obj.bx = game.resources.bx.value;
-  obj.bxMax = game.resources.bx.max;
-  obj.nextAXWidthCost = game.upgrades.axWidth.cost;
-  obj.nextAXIncrementerCost = game.incrementers.ax.nextCost.ax;
+  obj.ax = game.state.resources.ax.value;
+  obj.axMax = game.state.resources.ax.max;
+  obj.bx = game.state.resources.bx.value;
+  obj.bxMax = game.state.resources.bx.max;
+  obj.nextAXWidthCost = game.state.upgrades.axWidth.cost;
+  obj.nextAXIncrementerCost = game.state.incrementers.ax.nextCost.ax;
   return obj;
 }
 
@@ -162,52 +145,59 @@ function log (msg: string) {
 }
 
 function incrementRegisters() {
-  const axRate = game.incrementers.ax.quantity;
+  const axRate = game.state.incrementers.ax.quantity;
 
-  const axCapacity = game.resources.ax.max;
-  const bxCapacity = game.resources.bx.max;
+  const axCapacity = game.state.resources.ax.max;
+  const bxCapacity = game.state.resources.bx.max;
 
-  game.resources.ax.value += axRate;
-  if (game.resources.ax.value >= axCapacity + 1) {
-    game.resources.bx.value = game.resources.bx.value + Math.floor(game.resources.ax.value / axCapacity);
-    game.resources.ax.value = game.resources.ax.value % (axCapacity + 1);
+  game.state.resources.ax.value += axRate;
+  if (game.state.resources.ax.value >= axCapacity + 1) {
+    game.state.resources.bx.value = game.state.resources.bx.value + Math.floor(game.state.resources.ax.value / axCapacity);
+    game.state.resources.ax.value = game.state.resources.ax.value % (axCapacity + 1);
   }
 
-  if (game.resources.bx.value >= bxCapacity + 1) {
-    game.resources.bx.value = game.resources.bx.value % (bxCapacity + 1);
+  if (game.state.resources.bx.value >= bxCapacity + 1) {
+    game.state.resources.bx.value = game.state.resources.bx.value % (bxCapacity + 1);
   }
 }
 
 function increaseAXWidth() {
-  for (const resource in game.upgrades.axWidth.cost) {
-    if ((<any>game.resources)[resource].value < game.upgrades.axWidth.cost[resource]) {
+  for (const resource in game.state.upgrades.axWidth.cost) {
+    if ((<any>game.state.resources)[resource].value < game.state.upgrades.axWidth.cost[resource]) {
       return;
     }
   }
 
-  for (const resource in game.upgrades.axWidth.cost) {
-    (<any>game.resources)[resource].value -= game.upgrades.axWidth.cost[resource];
+  for (const resource in game.state.upgrades.axWidth.cost) {
+    (<any>game.state.resources)[resource].value -= game.state.upgrades.axWidth.cost[resource];
   }
 
-  game.upgrades.axWidth.apply();
-  game.upgrades.axWidth.increaseCost();
+  game.logic.upgrades.axWidth.apply();
+  game.logic.upgrades.axWidth.increaseCost();
   updateAXWidth();
 }
 
 function buyAXIncrementer() {
-  if (game.resources.ax.value < game.incrementers.ax.nextCost.ax) {
+  if (game.state.resources.ax.value < game.state.incrementers.ax.nextCost.ax) {
     return;
   }
 
-  game.resources.ax.value -= game.incrementers.ax.nextCost.ax;
-  game.incrementers.ax.quantity += 1;
-  game.incrementers.ax.nextCost.ax = game.incrementers.ax.quantity === 1 ? 4 : game.incrementers.ax.nextCost.ax * Math.ceil(1.01 + Math.random() * 0.2);
+  game.state.resources.ax.value -= game.state.incrementers.ax.nextCost.ax;
+  game.state.incrementers.ax.quantity += 1;
+  game.state.incrementers.ax.nextCost.ax = game.state.incrementers.ax.quantity === 1 ? 4 : Math.ceil(game.state.incrementers.ax.nextCost.ax * (1.01 + Math.random() * 0.2));
   updateAXIncrementers();
 }
 
 function initializeDOM() {
-  document.getElementById("build-a").onclick = () => increaseAXWidth();
-  document.getElementById("speed-a").onclick = () => buyAXIncrementer();
+  document.getElementById("save").onclick = () => Save.save(game.state);
+  document.getElementById("export").onclick = () => {
+    const data = Save.exportSave(game.state);
+    prompt("", data);
+  };
+  document.getElementById("import").onclick = doImport;
+  document.getElementById("hard-reset").onclick = doHardReset;
+  document.getElementById("build-a").onclick = increaseAXWidth;
+  document.getElementById("speed-a").onclick = buyAXIncrementer;
   document.getElementById("run").onclick = runCode;
   updateAXWidth();
   updateAXIncrementers();
@@ -219,24 +209,80 @@ function initializeDOM() {
 }
 
 function updateAXIncrementers () {
-  document.getElementById("speed-a").textContent = `Purchase incrementer (${renderCost(game.incrementers.ax.nextCost)})`;
+  document.getElementById("speed-a").textContent = `Purchase incrementer (${renderCost(game.state.incrementers.ax.nextCost)})`;
 }
 
 function updateAXWidth () {
-  document.getElementById("build-a").textContent = `Increase register width (${renderCost(game.upgrades.axWidth.cost)})`;
+  document.getElementById("build-a").textContent = `Increase register width (${renderCost(game.state.upgrades.axWidth.cost)})`;
 }
 
 function updateRegisters() {
-  document.getElementById("ax").textContent = `${game.resources.ax.value} / ${game.resources.ax.max}`;
-  document.getElementById("bx").textContent = `${game.resources.bx.value} / ${game.resources.bx.max}`;
+  document.getElementById("ax").textContent = `${game.state.resources.ax.value} / ${game.state.resources.ax.max}`;
+  document.getElementById("bx").textContent = `${game.state.resources.bx.value} / ${game.state.resources.bx.max}`;
+}
+
+function doImport() {
+  const data = prompt();
+  try {
+    const state = Save.importSave(data);
+    if (state) {
+      game.state = state;
+      return;
+    }
+  } catch {
+  }
+  alert("Unable to import save data.");
+}
+
+function doHardReset() {
+  game.state = {
+    code: <string> "",
+    resources: <any>{
+      ax: {
+        value: 0,
+        max: 4,
+      },
+      bx: {
+        value: 0,
+        max: 4,
+      }
+    },
+    incrementers: {
+      ax: {
+        quantity: 0,
+        nextCost: {
+          ax: 0,
+        }
+      },
+      bx: {
+        quantity: 0,
+        nextCost: {
+          ax: 0,
+          bx: 0,
+        }
+      },
+    },
+    upgrades: {
+      axWidth: {
+        cost: <any>{
+          ax: 3,
+        },
+      },
+      bxWidth: {
+        cost: <any>{
+          ax: 6,
+          bx: 3,
+        }
+      }
+    }
+  };
+  Save.hardReset();
 }
 
 function runCode() {
-  game.code = ace.edit("editor").getValue();
+  game.state.code = ace.edit("editor").getValue();
 }
 
 function renderCost(cost: any) {
   return Object.keys(cost).map(x => `${x}:${cost[x]}`).join(", ");
 }
-
-initializeDOM();
