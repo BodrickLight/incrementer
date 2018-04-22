@@ -1,15 +1,48 @@
 html, body {
-  height: 100%;
+  background: #000000;
+  color: #C0C0C0;
+  font-family: Inconsolata, monospace;
+  font-size: 20px;
 }
+
+body {
+  margin: 20px;
+  border: 1px solid #C0C0C0;
+  padding: 20px;
+}
+
+#title-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  text-align: center
+}
+#title {
+  font-size: 20px;
+  background: #000000;
+  padding: 10px;
+  margin:0;
+  display: inline-block;
+}
+
 #container {
   display:flex;
   flex-direction: row;
   height: 40%;
 }
 
+#caret {
+  visibility: hidden;
+}
 #registers {
   display:flex;
   flex-direction: row;
+}
+
+pre {
+  font-family: Inconsolata, monospace;
+  font-size: 14px;
 }
 
 #code-container {
@@ -33,6 +66,6 @@ html, body {
 }
 
 #log {
-  height: 30%;
+  height: 100%;
   overflow-y: scroll;
 }

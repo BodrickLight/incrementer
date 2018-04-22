@@ -51,7 +51,7 @@ if (!game.state) {
 }
 
 initializeDOM();
-const tickSpeed = 200;
+const tickSpeed = 530;
 setTimeout(tick, tickSpeed);
 
 let lastTime = 0;
