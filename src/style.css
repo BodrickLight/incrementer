@@ -5,40 +5,118 @@ html, body {
   font-size: 20px;
 }
 
+h1 {
+  margin: 10px 0 0 0;
+  font-size: 20px;
+  background: #000000;
+  padding: 0 10px;
+  display: inline-block;
+}
+
+h2 {
+  font-size: 20px;
+  margin: 10px 0;
+  display:inline-block;
+  text-align: center;
+  width: 100%;
+}
+
 body {
   margin: 20px;
   border: 1px solid #C0C0C0;
-  padding: 20px;
 }
 
-#title-wrapper {
+#title-wrapper, #registers-title-wrapper {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   text-align: center
 }
-#title {
-  font-size: 20px;
-  background: #000000;
-  padding: 10px;
-  margin:0;
-  display: inline-block;
-}
 
 #container {
   display:flex;
   flex-direction: row;
   height: 40%;
+  margin: 20px;
 }
 
-#caret {
-  visibility: hidden;
+#menu {
+  display: flex;
+  width: 100%;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-around;
+  margin: 10px 0 0 0;
+  padding: 0 0 10px 0;
+  border-bottom: 1px solid #C0C0C0;
 }
+
+#menu > div {
+  cursor: pointer;
+}
+
+#menu > div:hover .dark-green {
+  color: #00ff00;
+}
+
+#menu > div:hover .yellow {
+  font-weight: bold;
+}
+
+.yellow {
+  color: #ffff00;
+}
+
+.dark-green {
+  color: #008000;
+}
+
+.bold {
+  font-weight: bold;
+}
+
 #registers {
+  position: relative;
+  display:flex;
+  flex-direction: row;
+  border-top: 1px solid #C0C0C0;
+  border-left: 1px solid #C0C0C0;
+  border-bottom: 1px solid #C0C0C0;
+  margin: 0 -1px;
+}
+
+#registers > div {
+  flex: 1;
+  border-right: 1px solid #C0C0C0;
   display:flex;
   flex-direction: row;
 }
+
+.register-details {
+  flex: 1;
+  border-right: 1px solid #C0C0C0;
+  text-align: center;
+}
+
+#ax-graph, #bx-graph, #cx-graph {
+  margin: 10px;
+  height: 10vh;
+  width: 20px;
+  display: inline-block;
+  position:relative;
+}
+
+#ax-graph-inner, #bx-graph-inner, #cx-graph-inner {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: inline-block;
+  background: #008000;
+}
+
+
 
 pre {
   font-family: Inconsolata, monospace;

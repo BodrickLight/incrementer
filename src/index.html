@@ -10,19 +10,52 @@
     <div id="title-wrapper">
       <h1 id="title">incrementer v0.0.1</h1>
     </div>
-    <div>
-      <button id="save">Save</button>
-      <button id="export">Export</button>
-      <button id="import">Import</button>
-      <button id="hard-reset">Hard reset</button>
+    <div id="menu">
+      <div id="save"><span class="yellow">F1</span><span class="bold dark-green"> Save</span></div>
+      <div id="export"><span class="yellow">F2</span><span class="bold dark-green"> Export</span></div>
+      <div id="import"><span class="yellow">F3</span><span class="bold dark-green"> Import</span></div>
+      <div id="hard-reset"><span class="yellow">F10</span><span class="bold dark-green"> Hard reset</span></div>
+    </div>
+    <h2 id="registers-title">REGISTERS</h2>
+    <div id="registers">
+      <div class="register">
+        <div class="register-details">
+          <h3>ax</h3>
+          <div id="ax"></div>
+        </div>
+        <div id="ax-graph">
+          <div id="ax-graph-inner"></div>
+        </div>
+      </div>
+      <div class="register">
+        <div class="register-details">
+          <h3>bx</h3>
+          <div id="bx"></div>
+        </div>
+        <div id="bx-graph">
+          <div id="bx-graph-inner"></div>
+        </div>
+      </div>
+      <div class="register">
+        <div class="register-details">
+          <h3>cx</h3>
+          <div id="cx"></div>
+        </div>
+        <div id="cx-graph">
+          <div id="cx-graph-inner"></div>
+        </div>
+      </div>
     </div>
     <div id="container">
-      <div id="registers">
-        <div><h3>ax:</h3><div id="ax"></div><button id="build-a"></button><button id="speed-a"></button></div>
-        <div><h3>bx:</h3><div id="bx"></div><button id="build-b"></button><button id="speed-b"></button></div>
-        <div><h3>cx:</h3><div id="cx"></div><button id="build-c"></button><button id="speed-c"></button></div>
+      <div id="graphs">
       </div>
       <div id="upgrades">
+        <button id="build-a"></button>
+        <button id="speed-a"></button>
+        <button id="build-b"></button>
+        <button id="speed-b"></button>
+        <button id="build-c"></button>
+        <button id="speed-c"></button>
         <button id="buy-computer"></button>
       </div>
 

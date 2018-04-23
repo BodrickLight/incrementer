@@ -219,6 +219,8 @@ function updateAXWidth () {
 function updateRegisters() {
   document.getElementById("ax").textContent = `${game.state.resources.ax.value} / ${game.state.resources.ax.max}`;
   document.getElementById("bx").textContent = `${game.state.resources.bx.value} / ${game.state.resources.bx.max}`;
+  document.getElementById("ax-graph-inner").style.height = `${game.state.resources.ax.value / game.state.resources.ax.max * 100}%`
+  document.getElementById("bx-graph-inner").style.height = `${game.state.resources.bx.value / game.state.resources.bx.max * 100}%`
 }
 
 function doImport() {
