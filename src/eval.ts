@@ -39,9 +39,9 @@ export default function (code: string, state: object, functions: object, cb: Fun
       return;
     }
 
-    timeout = setTimeout(function () {
+    timeout = window.setTimeout(function () {
       finish('Maximum execution time exceeded', undefined);
-    }, 500);//500);
+    }, 500);
   }
 
   function finish(err: any, result: any) {

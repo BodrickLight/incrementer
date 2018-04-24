@@ -126,7 +126,7 @@ pre {
 
 #code-container {
   flex: 1;
-  height: 70%;
+  height: 50vh;
   position: relative;
   display: flex;
   flex-direction: column;

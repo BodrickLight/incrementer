@@ -45,25 +45,36 @@ if (!game.state) {
 
 initializeDOM();
 const tickSpeed = 530;
-setTimeout(tick, tickSpeed);
+setTimeout(onTimer, tickSpeed);
 
 let lastTime = 0;
 
-function tick() {
+function onTimer() {
   const t = performance.now();
+  const ticks = Math.round((t - lastTime) / tickSpeed);
+  lastTime = t;
+  tick(ticks);
+}
 
+function tick(cycles: number) {
   incrementRegisters();
-
   const variables = getCodeVariables();
   const functions = getCodeFunctions();
-  document.getElementById("state").textContent = pretty(variables);
-  document.getElementById("functions").textContent = pretty(functions);
+
+  function end() {
+    if (cycles > 1) {
+      setTimeout(() => tick(cycles - 1), 0);
+    } else {
+      tickDone();
+    }
+  }
+
   if (game.state.code) {
     try {
-      const start = performance.now();
+      const t1 = performance.now();
       safeEval(game.state.code, variables, pretty(functions, 2, null, true), (err: any, result: any) => {
-        const end = performance.now();
-        console.log(`Execution time: ${end-start}`);
+        const t2 = performance.now();
+        console.log(`Execution time: ${t2-t1}`);
         if (err) {
           log(err);
           game.state.code = null;
@@ -78,23 +89,28 @@ function tick() {
             }
           }
           log(result.log);
+          end();
         }
-        setTimeout(tick, tickSpeed);
       });
     } catch (e) {
       log(e);
       game.state.code = null;
-      setTimeout(tick, tickSpeed);
+      end();
     }
   } else {
-    setTimeout(tick, tickSpeed);
+    end();
   }
-
-  lastTime = t;
-
-  updateRegisters();
 }
 
+function tickDone() {
+  const variables = getCodeVariables();
+  const functions = getCodeFunctions();
+  document.getElementById("state").textContent = pretty(variables);
+  document.getElementById("functions").textContent = pretty(functions);
+
+  updateRegisters();
+  setTimeout(onTimer, tickSpeed - (performance.now() - lastTime));
+}
 
 function getCodeVariables() {
   const obj = <any>{};
