@@ -189,6 +189,10 @@ function getCodeFunctions() {
   const obj = <any>{};
   // Newlines are important here for the pretty-printer to work properly!
   obj.log = function (object:object) {
+    if (typeof (object) === "function") {
+      console.log(`function ${(<any>object).name}()`);
+      return;
+    }
     console.log(object);
   };
   obj.buyAXWidthUpgrade = function () {
