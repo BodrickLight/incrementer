@@ -2,7 +2,7 @@ html, body {
   background: #000000;
   color: #C0C0C0;
   font-family: Inconsolata, monospace;
-  font-size: 20px;
+  font-size: 16px;
 }
 
 #html.segfault, #html.segfault body, #html.segfault h1 {
@@ -10,23 +10,23 @@ html, body {
 }
 
 h1 {
-  margin: 10px 0 0 0;
-  font-size: 20px;
+  margin: 8px 0 0 0;
+  font-size: 16px;
   background: #000000;
-  padding: 0 10px;
+  padding: 0 8px;
   display: inline-block;
 }
 
 h2, h3 {
-  font-size: 20px;
-  margin: 10px 0;
+  font-size: 16px;
+  margin: 8px 0;
   display:inline-block;
   text-align: center;
   width: 100%;
 }
 
 body {
-  margin: 20px;
+  margin: 16px;
   border: 1px solid #C0C0C0;
 }
 
@@ -40,9 +40,7 @@ body {
 
 #container {
   display:flex;
-  flex-direction: row;
-  height: 40%;
-  margin: 20px;
+  flex-direction: column;
 }
 
 #menu {
@@ -51,8 +49,8 @@ body {
   flex-direction: row;
   align-items: center;
   justify-content: space-around;
-  margin: 10px 0 0 0;
-  padding: 0 0 10px 0;
+  margin: 8px 0 0 0;
+  padding: 0 0 8px 0;
   border-bottom: 1px solid #C0C0C0;
 }
 
@@ -111,8 +109,8 @@ body {
 }
 
 #ax-graph, #bx-graph, #cx-graph {
-  margin: 20px 0 20px 0;
-  height: 20px;
+  margin: 16px 0 16px 0;
+  height: 16px;
   width: 100%;
   display: inline-block;
   position:relative;
@@ -127,42 +125,48 @@ body {
   background: #008000;
 }
 
-#upgrades {
+#upgrades, #permanent-upgrades {
   display: flex;
   flex-direction: row;
+  align-items: center;
+  justify-content: space-around;
 }
 
-#upgrades > div {
+#upgrades > div, #permanent-upgrades > div {
   display: flex;
-  margin: 10px;
+  margin: 8px;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  cursor: pointer;
+}
+
+#upgrades > div:hover, #permanent-upgrades > div:hover {
+  color: #ffffff;
+  font-weight: bold;
 }
 
 pre {
   font-family: Inconsolata, monospace;
-  font-size: 14px;
+  font-size: 16px;
+  margin: 0;
 }
 
 #code-container {
   flex: 1;
-  height: 50vh;
+  width: 100%;
   position: relative;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
 }
 
 #editor {
-  /*position: absolute;
-  margin: 0;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  */
-  display:flex;
   height: 100%;
+  flex: 1;
+}
+
+#state-container {
+  margin: 0 16px;
 }
 
 #log {

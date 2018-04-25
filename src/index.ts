@@ -8,6 +8,8 @@ const pretty = require('js-object-pretty-print').pretty;
 
 const ace = require('ace-builds');
 require("ace-builds/src-min-noconflict/mode-javascript");
+require("ace-builds/src-min-noconflict/theme-twilight");
+require("./ace.css");
 
 interface Game {
   state: State,
@@ -17,7 +19,7 @@ interface Game {
 interface State {
   faultCycles: number,
   permanentUpgrades: {
-    computer: boolean,
+    computationEngine: boolean,
   },
   resources: {
     [index: string]: Resource,
@@ -49,11 +51,12 @@ let game: Game = {
   state: null,
   logic: {
     permanentUpgrades: [{
-        id: "Computer",
-        name: "Computer",
-        elementId: "buy-computer",
+        id: "ComputationEngine",
+        name: "Computation Engine",
+        description: "???",
+        elementId: "buy-computation-engine",
         apply: (state: State) => {
-          state.permanentUpgrades.computer = true;
+          state.permanentUpgrades.computationEngine = true;
         },
         increaseCost: () => null,
         shouldUnlock: (state: State) => state.resources.AX.max >= 64,
@@ -62,6 +65,7 @@ let game: Game = {
     upgrades: [{
         id: "AXWidth",
         name: "AX Register Width",
+        description: "Double capacity of AX",
         elementId: "buy-ax-width",
         apply: (state: State) => {
           state.resources.AX.max = state.resources.AX.max * 2 + 1;
@@ -75,6 +79,7 @@ let game: Game = {
       }, {
         id: "AXIncrementer",
         name: "AX Incrementer",
+        description: "Increase AX by an additional 1 every tick",
         elementId: "buy-ax-incrementer",
         apply: (state: State) => {
           state.incrementers.AX.quantity += 1;
@@ -88,6 +93,7 @@ let game: Game = {
       }, {
         id: "BXWidth",
         name: "BX Register Width",
+        description: "Double capacity of BX",
         elementId: "buy-bx-width",
         apply: (state: State) => {
           state.resources.BX.max = state.resources.AX.max * 2 + 1;
@@ -101,6 +107,7 @@ let game: Game = {
       }, {
         id: "BXIncrementer",
         name: "BX Incrementer",
+        description: "Increase BX by an additional 1 every tick",
         elementId: "buy-bx-incrementer",
         apply: (state: State) => {
           state.incrementers.BX.quantity += 1;
@@ -114,6 +121,7 @@ let game: Game = {
       }, {
         id: "CXWidth",
         name: "CX Width",
+        description: "Double capacity of CX",
         elementId: "buy-cx-width",
         apply: (state: State) => {
           state.resources.CX.max = !state.resources.CX.max ? 4 : state.resources.CX.max * 2 + 1;
@@ -301,12 +309,30 @@ function initializeDOM() {
     upgradeContainer.appendChild(div);
   }
 
+  const permanentUpgradeContainer = document.getElementById("permanent-upgrades");
+  for (const upgrade of game.logic.permanentUpgrades) {
+    const div = document.createElement("div");
+    const title = document.createElement("span");
+    title.textContent = upgrade.name;
+    const cost = document.createElement("span");
+    cost.classList.add("light-green");
+    cost.textContent = "???";
+    div.appendChild(title);
+    div.appendChild(cost);
+    div.id = upgrade.elementId;
+    div.onclick = () => tryPurchaseUpgrade(upgrade);
+    permanentUpgradeContainer.appendChild(div);
+  }
+
   document.getElementById("run").onclick = runCode;
   updateRegisters();
 
-  const editor = ace.edit("editor");
-  //editor.setTheme("ace/theme/twilight");
-  editor.session.setMode("ace/mode/javascript");
+  const editor = ace.edit("editor", {
+    mode: "ace/mode/javascript",
+    theme: "ace/theme/twilight",
+    minLines: 20,
+    maxLines: 9999,
+  });
 }
 
 function updateRegisters() {
@@ -317,7 +343,7 @@ function updateRegisters() {
   document.getElementById("bx-graph-inner").style.width = `${game.state.resources.BX.value / game.state.resources.BX.max * 100}%`
   document.getElementById("cx-graph-inner").style.width = `${game.state.resources.CX.value / game.state.resources.CX.max * 100}%`
   document.getElementById("html").classList.toggle("segfault", game.state.faultCycles > 0);
-  document.getElementById("code-container").style.visibility = game.state.permanentUpgrades.computer ? "visible": "hidden";
+//  document.getElementById("code-container").style.visibility = game.state.permanentUpgrades.computer ? "visible": "hidden";
 
   for (const upgrade of game.logic.upgrades) {
     const state = game.state.upgrades[upgrade.id];
@@ -368,7 +394,7 @@ function doHardReset() {
     code: "",
     faultCycles: 0,
     permanentUpgrades: {
-      computer: false,
+      computationEngine: false,
     },
     resources: {
       AX: {

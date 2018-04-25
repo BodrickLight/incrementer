@@ -1,6 +1,7 @@
 export interface Upgrade {
   id: string,
   name: string,
+  description: string,
   elementId: string,
   apply(state: any): void,
   increaseCost(state: any): void,
