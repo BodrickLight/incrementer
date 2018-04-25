@@ -2,7 +2,7 @@ import './style.css';
 
 import safeEval from './eval';
 import * as Save from './save';
-import { Upgrade, UpgradeState } from './upgrades';
+import { Upgrade, UpgradeState, Costs } from './upgrades';
 
 const pretty = require('js-object-pretty-print').pretty;
 
@@ -16,6 +16,9 @@ interface Game {
 
 interface State {
   faultCycles: number,
+  permanentUpgrades: {
+    computer: boolean,
+  },
   resources: {
     [index: string]: Resource,
   },
@@ -38,18 +41,28 @@ interface IncrementerState {
 }
 
 interface Logic {
-  upgrades: {
-    [index: string]: Upgrade,
-  }
+  upgrades: Upgrade[],
+  permanentUpgrades: Upgrade[],
 }
 
 let game: Game = {
   state: null,
   logic: {
-    upgrades: {
-      AXWidth: {
+    permanentUpgrades: [{
+        id: "Computer",
+        name: "Computer",
+        elementId: "buy-computer",
+        apply: (state: State) => {
+          state.permanentUpgrades.computer = true;
+        },
+        increaseCost: () => null,
+        shouldUnlock: (state: State) => state.resources.AX.max >= 64,
+      }
+    ],
+    upgrades: [{
         id: "AXWidth",
         name: "AX Register Width",
+        elementId: "buy-ax-width",
         apply: (state: State) => {
           state.resources.AX.max *= 2;
         },
@@ -59,10 +72,10 @@ let game: Game = {
           }
         },
         shouldUnlock: (state: State) => true,
-      },
-      AXIncrementer: {
+      }, {
         id: "AXIncrementer",
         name: "AX Incrementer",
+        elementId: "buy-ax-incrementer",
         apply: (state: State) => {
           state.incrementers.AX.quantity += 1;
         },
@@ -72,10 +85,10 @@ let game: Game = {
           }
         },
         shouldUnlock: (state: State) => true,
-      },
-      BXWidth: {
+      }, {
         id: "BXWidth",
         name: "BX Register Width",
+        elementId: "buy-bx-width",
         apply: (state: State) => {
           state.resources.BX.max *= 2;
         },
@@ -86,7 +99,7 @@ let game: Game = {
         },
         shouldUnlock: (state: State) => true,
       }
-    },
+    ],
   }
 };
 
@@ -140,10 +153,10 @@ function tick(cycles: number) {
           const actions = JSON.parse(result.answer);
           for(const a of actions) {
             if (a === "buyAXWidthUpgrade") {
-              increaseAXWidth();
+              tryPurchaseUpgrade(game.logic.upgrades.filter(x => x.id == "AXWidth")[0]);
             }
             if (a === "buyAXIncrementer") {
-              buyAXIncrementer();
+              tryPurchaseUpgrade(game.logic.upgrades.filter(x => x.id == "AXIncrementer")[0]);
             }
           }
           log(result.log);
@@ -232,14 +245,6 @@ function incrementRegisters() {
   }
 }
 
-function increaseAXWidth() {
-  tryPurchaseUpgrade(game.logic.upgrades.AXWidth);
-}
-
-function buyAXIncrementer() {
-  tryPurchaseUpgrade(game.logic.upgrades.AXIncrementer);
-}
-
 function initializeDOM() {
   document.getElementById("save").onclick = () => Save.save(game.state);
   document.getElementById("export").onclick = () => {
@@ -248,8 +253,14 @@ function initializeDOM() {
   };
   document.getElementById("import").onclick = doImport;
   document.getElementById("hard-reset").onclick = doHardReset;
-  document.getElementById("build-a").onclick = increaseAXWidth;
-  document.getElementById("speed-a").onclick = buyAXIncrementer;
+  const upgradeContainer = document.getElementById("upgrades");
+  for (const upgrade of game.logic.upgrades) {
+    const div = document.createElement("div");
+    div.id = upgrade.elementId;
+    div.onclick = () => tryPurchaseUpgrade(upgrade);
+    upgradeContainer.appendChild(div);
+  }
+
   document.getElementById("run").onclick = runCode;
   updateRegisters();
 
@@ -264,8 +275,13 @@ function updateRegisters() {
   document.getElementById("ax-graph-inner").style.height = `${game.state.resources.AX.value / game.state.resources.AX.max * 100}%`
   document.getElementById("bx-graph-inner").style.height = `${game.state.resources.BX.value / game.state.resources.BX.max * 100}%`
   document.getElementById("html").classList.toggle("segfault", game.state.faultCycles > 0);
-  document.getElementById("speed-a").textContent = `Purchase incrementer (${renderCost(game.state.upgrades.AXIncrementer.cost)})`;
-  document.getElementById("build-a").textContent = `Increase register width (${renderCost(game.state.upgrades.AXWidth.cost)})`;
+  document.getElementById("code-container").style.visibility = game.state.permanentUpgrades.computer ? "visible": "hidden";
+
+  for (const upgrade of game.logic.upgrades) {
+    const state = game.state.upgrades[upgrade.id];
+    const div = document.getElementById(upgrade.elementId);
+    div.textContent = `${upgrade.name}: ${renderCost(state.cost)}`
+  }
 }
 
 function tryPurchaseUpgrade(upgrade: Upgrade) {
@@ -309,6 +325,9 @@ function doHardReset() {
   game.state = {
     code: "",
     faultCycles: 0,
+    permanentUpgrades: {
+      computer: false,
+    },
     resources: {
       AX: {
         value: 0,
@@ -353,6 +372,6 @@ function runCode() {
   game.state.code = ace.edit("editor").getValue();
 }
 
-function renderCost(cost: any) {
+function renderCost(cost: Costs) {
   return Object.keys(cost).map(x => `${x}:${cost[x]}`).join(", ");
 }

@@ -121,7 +121,10 @@ body {
   min-height: 1px;
 }
 
-
+#upgrades > div {
+  display: inline-block;
+  margin: 10px;
+}
 
 pre {
   font-family: Inconsolata, monospace;
