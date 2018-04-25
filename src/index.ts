@@ -64,11 +64,11 @@ let game: Game = {
         name: "AX Register Width",
         elementId: "buy-ax-width",
         apply: (state: State) => {
-          state.resources.AX.max *= 2;
+          state.resources.AX.max = state.resources.AX.max * 2 + 1;
         },
         increaseCost: (state: State) => {
           for (const resource in state.upgrades.AXWidth.cost) {
-            state.upgrades.AXWidth.cost[resource] *= 2;
+            state.upgrades.AXWidth.cost[resource] = state.upgrades.AXWidth.cost[resource] * 2 + 1;
           }
         },
         shouldUnlock: (state: State) => true,
@@ -90,11 +90,37 @@ let game: Game = {
         name: "BX Register Width",
         elementId: "buy-bx-width",
         apply: (state: State) => {
-          state.resources.BX.max *= 2;
+          state.resources.BX.max = state.resources.AX.max * 2 + 1;
         },
         increaseCost: (state: State) => {
           for (const resource in state.upgrades.BXWidth.cost) {
-            state.upgrades.BXWidth.cost[resource] *= 2;
+            state.upgrades.BXWidth.cost[resource] = state.upgrades.BXWidth.cost[resource] * 2 + 1;
+          }
+        },
+        shouldUnlock: (state: State) => true,
+      }, {
+        id: "BXIncrementer",
+        name: "BX Incrementer",
+        elementId: "buy-bx-incrementer",
+        apply: (state: State) => {
+          state.incrementers.BX.quantity += 1;
+        },
+        increaseCost: (state: State) => {
+          for (const resource in state.upgrades.BXIncrementer.cost) {
+            state.upgrades.BXIncrementer.cost[resource] = state.upgrades.BXIncrementer.cost[resource] * 2 + 1;
+          }
+        },
+        shouldUnlock: (state: State) => true,
+      }, {
+        id: "CXWidth",
+        name: "CX Width",
+        elementId: "buy-cx-width",
+        apply: (state: State) => {
+          state.resources.CX.max = !state.resources.CX.max ? 4 : state.resources.CX.max * 2 + 1;
+        },
+        increaseCost: (state: State) => {
+          for (const resource in state.upgrades.CXWidth.cost) {
+            state.upgrades.CXWidth.cost[resource] = state.upgrades.CXWidth.cost[resource] * 2 + 1;
           }
         },
         shouldUnlock: (state: State) => true,
@@ -109,7 +135,7 @@ if (!game.state) {
 }
 
 initializeDOM();
-const tickSpeed = 530;
+const tickSpeed = 53;// 530;
 setTimeout(onTimer, tickSpeed);
 
 let lastTime = 0;
@@ -230,9 +256,11 @@ function log (msg: string) {
 
 function incrementRegisters() {
   const AXRate = game.state.incrementers.AX.quantity;
+  const BXRate = game.state.incrementers.BX.quantity;
 
   const AXCapacity = game.state.resources.AX.max;
   const BXCapacity = game.state.resources.BX.max;
+  const CXCapacity = game.state.resources.CX.max;
 
   game.state.resources.AX.value += AXRate;
   if (game.state.resources.AX.value >= AXCapacity + 1) {
@@ -240,8 +268,14 @@ function incrementRegisters() {
     game.state.resources.AX.value = game.state.resources.AX.value % (AXCapacity + 1);
   }
 
+  game.state.resources.BX.value += BXRate;
   if (game.state.resources.BX.value >= BXCapacity + 1) {
+    game.state.resources.CX.value = game.state.resources.CX.value + Math.floor(game.state.resources.BX.value / BXCapacity);
     game.state.resources.BX.value = game.state.resources.BX.value % (BXCapacity + 1);
+  }
+
+  if (game.state.resources.CX.value >= CXCapacity + 1) {
+    game.state.resources.CX.value = game.state.resources.CX.value % (CXCapacity + 1);
   }
 }
 
@@ -256,6 +290,12 @@ function initializeDOM() {
   const upgradeContainer = document.getElementById("upgrades");
   for (const upgrade of game.logic.upgrades) {
     const div = document.createElement("div");
+    const title = document.createElement("span");
+    title.textContent = upgrade.name;
+    const cost = document.createElement("span");
+    cost.classList.add("light-green");
+    div.appendChild(title);
+    div.appendChild(cost);
     div.id = upgrade.elementId;
     div.onclick = () => tryPurchaseUpgrade(upgrade);
     upgradeContainer.appendChild(div);
@@ -272,15 +312,17 @@ function initializeDOM() {
 function updateRegisters() {
   document.getElementById("ax").textContent = `${game.state.resources.AX.value} / ${game.state.resources.AX.max}`;
   document.getElementById("bx").textContent = `${game.state.resources.BX.value} / ${game.state.resources.BX.max}`;
-  document.getElementById("ax-graph-inner").style.height = `${game.state.resources.AX.value / game.state.resources.AX.max * 100}%`
-  document.getElementById("bx-graph-inner").style.height = `${game.state.resources.BX.value / game.state.resources.BX.max * 100}%`
+  document.getElementById("cx").textContent = `${game.state.resources.CX.value} / ${game.state.resources.CX.max}`;
+  document.getElementById("ax-graph-inner").style.width = `${game.state.resources.AX.value / game.state.resources.AX.max * 100}%`
+  document.getElementById("bx-graph-inner").style.width = `${game.state.resources.BX.value / game.state.resources.BX.max * 100}%`
+  document.getElementById("cx-graph-inner").style.width = `${game.state.resources.CX.value / game.state.resources.CX.max * 100}%`
   document.getElementById("html").classList.toggle("segfault", game.state.faultCycles > 0);
   document.getElementById("code-container").style.visibility = game.state.permanentUpgrades.computer ? "visible": "hidden";
 
   for (const upgrade of game.logic.upgrades) {
     const state = game.state.upgrades[upgrade.id];
     const div = document.getElementById(upgrade.elementId);
-    div.textContent = `${upgrade.name}: ${renderCost(state.cost)}`
+    div.children[1].textContent = renderCost(state.cost);
   }
 }
 
@@ -331,11 +373,15 @@ function doHardReset() {
     resources: {
       AX: {
         value: 0,
-        max: 4,
+        max: 3,
       },
       BX: {
         value: 0,
-        max: 4,
+        max: 3,
+      },
+      CX: {
+        value: 0,
+        max: 0,
       }
     },
     incrementers: {
@@ -349,18 +395,28 @@ function doHardReset() {
     upgrades: {
       AXWidth: {
         cost: {
-          AX: 3,
+          BX: 3,
         },
       },
       AXIncrementer: {
         cost: {
-          AX: 0,
+          BX: 0,
         }
       },
       BXWidth: {
         cost: {
           AX: 6,
-          BX: 3,
+        }
+      }, 
+      BXIncrementer: {
+        cost: {
+          CX: 6,
+        }
+      },
+      CXWidth: {
+        cost: {
+          AX: 64,
+          BX: 64,
         }
       }
     }

@@ -17,7 +17,7 @@ h1 {
   display: inline-block;
 }
 
-h2 {
+h2, h3 {
   font-size: 20px;
   margin: 10px 0;
   display:inline-block;
@@ -76,6 +76,14 @@ body {
   color: #008000;
 }
 
+.light-green {
+  color: #00ff00;
+}
+
+.blue {
+  color: #0000ff;
+}
+
 .bold {
   font-weight: bold;
 }
@@ -94,19 +102,18 @@ body {
   flex: 1;
   border-right: 1px solid #C0C0C0;
   display:flex;
-  flex-direction: row;
+  flex-direction: column;
 }
 
 .register-details {
   flex: 1;
-  border-right: 1px solid #C0C0C0;
   text-align: center;
 }
 
 #ax-graph, #bx-graph, #cx-graph {
-  margin: 10px;
-  height: 10vh;
-  width: 20px;
+  margin: 20px 0 20px 0;
+  height: 20px;
+  width: 100%;
   display: inline-block;
   position:relative;
 }
@@ -115,15 +122,22 @@ body {
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 100%;
+  height: 100%;
   display: inline-block;
   background: #008000;
-  min-height: 1px;
+}
+
+#upgrades {
+  display: flex;
+  flex-direction: row;
 }
 
 #upgrades > div {
-  display: inline-block;
+  display: flex;
   margin: 10px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 pre {
